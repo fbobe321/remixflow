@@ -1,0 +1,14 @@
+**/node_modules
+**/__pycache__
+**/*.pyc
+backend/dist
+backend/build
+backend/*.egg-info
+frontend/dist
+*_data/
+remixflow_data/
+*.wav
+*.mp3
+samples/
+.git
+.pytest_cache

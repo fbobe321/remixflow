@@ -1,0 +1,29 @@
+# RemixFlow — one-command run.
+#   docker compose up            # slim (DSP + UI), http://localhost:8770
+#   docker compose --profile gpu up remixflow-gpu   # full ACE-Step (needs NVIDIA GPU)
+services:
+  remixflow:
+    image: fbobe3/remixflow:latest
+    build: { context: ., dockerfile: Dockerfile }
+    ports: ["8770:8770"]
+    volumes: ["remixflow-data:/data"]
+    restart: unless-stopped
+
+  remixflow-gpu:
+    profiles: ["gpu"]
+    image: fbobe3/remixflow:gpu
+    build: { context: ., dockerfile: Dockerfile.gpu }
+    ports: ["8770:8770"]
+    volumes:
+      - remixflow-data:/data
+      - hf-cache:/root/.cache/huggingface
+    environment:
+      ACESTEP_MODEL: fbobe3/acestep-v15-xl-turbo-diffusers-mirror
+    deploy:
+      resources:
+        reservations:
+          devices: [{ driver: nvidia, count: all, capabilities: [gpu] }]
+
+volumes:
+  remixflow-data:
+  hf-cache:

@@ -31,12 +31,15 @@ dev = ["pytest>=8.0", "httpx>=0.27"]
 remixflow = "remixflow.__main__:main"
 
 [project.urls]
-Homepage = "https://example.com/remixflow"
+Homepage = "https://github.com/fbobe321/remixflow"
+Repository = "https://github.com/fbobe321/remixflow"
+
+# The built React UI is emitted into remixflow/static (see frontend build) and is
+# .gitignored (build output). `artifacts` forces it into the sdist/wheel anyway,
+# so `pip install remixflow` serves the app with no Node.
+[tool.hatch.build]
+artifacts = ["remixflow/static/**/*"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["remixflow"]
-
-# The built React UI is emitted into remixflow/static (see frontend build) and
-# shipped inside the wheel so `pip install remixflow` serves the app with no Node.
-[tool.hatch.build.targets.wheel.force-include]
-"remixflow/static" = "remixflow/static"
+artifacts = ["remixflow/static/**/*"]

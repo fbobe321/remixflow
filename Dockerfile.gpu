@@ -1,0 +1,30 @@
+# RemixFlow — full GPU image with the real ACE-Step v1.5 generative backend.
+# Needs an NVIDIA GPU + the NVIDIA Container Toolkit. The ~10 GB model downloads
+# on first generation (or bake it in / mount a HF cache volume).
+#
+#   docker build -f Dockerfile.gpu -t fbobe3/remixflow:gpu .
+#   docker run --rm --gpus all -p 8770:8770 \
+#     -v hf-cache:/root/.cache/huggingface fbobe3/remixflow:gpu
+#
+# Point at a self-hosted model mirror with:
+#   -e ACESTEP_MODEL=fbobe3/acestep-v15-xl-turbo-diffusers-mirror
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
+
+LABEL org.opencontainers.image.source="https://github.com/fbobe321/remixflow"
+
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+      "remixflow[audio]==0.1.0" \
+      "diffusers>=0.39" transformers accelerate safetensors demucs
+
+# Pull the model from the self-hosted mirror by default (override with -e ACESTEP_MODEL=…).
+ENV REMIXFLOW_DATA_DIR=/data \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    ACESTEP_DEVICE=cuda:0 \
+    ACESTEP_MODEL=fbobe3/acestep-v15-xl-turbo-diffusers-mirror
+VOLUME ["/data"]
+EXPOSE 8770
+
+CMD ["remixflow", "serve", "--host", "0.0.0.0", "--port", "8770"]

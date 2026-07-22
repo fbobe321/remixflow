@@ -49,6 +49,38 @@ Open <http://127.0.0.1:8770>, drop in a song, and start steering.
 ./dev.sh    # backend :8770 (reload) + Vite :5173 (proxies /api)
 ```
 
+### Install from PyPI
+
+```bash
+pip install "remixflow[audio]"   # UI is bundled — no Node needed
+remixflow serve                  # → http://127.0.0.1:8770
+```
+
+<https://pypi.org/project/remixflow/>
+
+### Docker
+
+Slim image (DSP backend + full UI, no GPU) — the fastest way to try it:
+
+```bash
+docker run --rm -p 8770:8770 fbobe3/remixflow      # → http://localhost:8770
+# or:  docker compose up
+```
+
+Full **ACE-Step v1.5** generative backend (needs an NVIDIA GPU + the NVIDIA
+Container Toolkit). It pulls the model from the self-hosted mirror
+[`fbobe3/acestep-v15-xl-turbo-diffusers-mirror`](https://huggingface.co/fbobe3/acestep-v15-xl-turbo-diffusers-mirror)
+on first generation:
+
+```bash
+docker build -f Dockerfile.gpu -t fbobe3/remixflow:gpu .
+docker run --rm --gpus all -p 8770:8770 \
+  -v hf-cache:/root/.cache/huggingface fbobe3/remixflow:gpu
+# or:  docker compose --profile gpu up remixflow-gpu
+```
+
+Images: `fbobe3/remixflow:latest` (slim) · `fbobe3/remixflow:gpu` (build locally).
+
 ---
 
 ## How it maps to the PRD
