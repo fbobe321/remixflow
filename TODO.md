@@ -36,11 +36,11 @@ translate to MLX → confirm on Mac (M1 Air, 16 GB, inbound).
 
 ## iOS app
 - 🟡 Swift + MLX app skeleton — **built** in `ios/` (RemixFlowKit + SwiftUI app).
-  MLX-Swift translations: VAE/DiT/Qwen3/SDEdit full, ConditionEncoder neutral+TODO,
+  MLX-Swift translations: VAE/DiT/Qwen3/SDEdit/**ConditionEncoder all full**,
   WeightStore (load+4-bit), AudioEngine, ContentView. **Not compiled yet (needs Mac).**
 - ⬜ Compile + run on the M1; port each `*_mlx.py` parity check into a Swift test
 - ⬜ Decode imported audio → [2,N]@48k (AVAudioFile → MLXArray)
-- ⬜ Full conditioning (tokenizer + ConditionEncoder full forward)
+- ⬜ Tokenizer (Qwen2Fast) → swap neutral conditioning for the full ConditionEncoder path
 - ⬜ Living Mode loop on-device (generate-ahead + AudioEngine.enqueue)
 - ⬜ Swap quant-dequant for MLX packed quantizedMatmul (memory win)
 - ⬜ Decide vocal-preservation on mobile (defer / server-side Demucs)

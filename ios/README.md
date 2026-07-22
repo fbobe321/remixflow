@@ -22,7 +22,7 @@ ios/
       OobleckVAE.swift          encode + decode  (full, from *_mlx.py)
       DiT.swift                 4B transformer   (full, from dit_mlx.py)
       Qwen3TextEncoder.swift    text encoder     (full, from qwen3_mlx.py)
-      ConditionEncoder.swift    neutral path + TODO (from condenc_mlx.py)
+      ConditionEncoder.swift    full forward + neutral fallback (from condenc_mlx.py)
       Pipeline.swift            SDEdit loop + ACEStepPipeline (VAE→DiT→VAE)
   App/                          SwiftUI app (add to an Xcode iOS target)
     RemixFlowApp.swift, ContentView.swift, AudioEngine.swift
@@ -52,10 +52,11 @@ MLX-Swift API/layout differences from the Python MLX ports.
 
 ## What's wired vs TODO
 - ✅ UI (steering sliders, Living toggle), AVAudioEngine playback + gapless enqueue
-- ✅ VAE encode/decode, DiT, Qwen3, SDEdit loop, 4-bit quantize
-- ✅ Pipeline orchestration (encode → SDEdit(DiT) → decode) with neutral conditioning
+- ✅ VAE encode/decode, DiT, Qwen3, **ConditionEncoder (full)**, SDEdit loop, 4-bit quantize
+- ✅ Pipeline orchestration (encode → SDEdit(DiT) → decode)
 - ⬜ Decode the imported audio file → `[2, N]` @ 48 kHz (AVAudioFile → MLXArray)
-- ⬜ Full conditioning: tokenizer + `ConditionEncoder` full forward (see its file)
+- ⬜ **Tokenizer** (Qwen2Fast) → prompt/lyric ids + timbre latents, then swap
+  `conditionEncoder.neutral(…)` for the full `callAsFunction(text:…)`
 - ⬜ Living Mode loop (generate-ahead + `AudioEngine.enqueue`) on-device
 - ⬜ Swap quantize-dequantize for MLX packed `quantizedMatmul` (memory win)
 - ⬜ Compile + parity + perf pass on the M1
