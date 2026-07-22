@@ -35,11 +35,16 @@ translate to MLX → confirm on Mac (M1 Air, 16 GB, inbound).
 - ⬜ Re-test at high `variation_amount` before a "reimagine" mode ships.
 
 ## iOS app
-- ⬜ Swift + MLX app skeleton (load quantized weights, run pipeline)
-- ⬜ Port the steering UI (SwiftUI) OR wrap the web UI (PWA/Capacitor)
-- ⬜ Streaming/gapless Living playback on-device (AVAudioEngine)
-- ⬜ Decide vocal-preservation strategy on mobile (defer / server-side Demucs)
-- ⬜ On-device perf pass (tiling for VAE memory; buffer-ahead for Living)
+- 🟡 Swift + MLX app skeleton — **built** in `ios/` (RemixFlowKit + SwiftUI app).
+  MLX-Swift translations: VAE/DiT/Qwen3/SDEdit full, ConditionEncoder neutral+TODO,
+  WeightStore (load+4-bit), AudioEngine, ContentView. **Not compiled yet (needs Mac).**
+- ⬜ Compile + run on the M1; port each `*_mlx.py` parity check into a Swift test
+- ⬜ Decode imported audio → [2,N]@48k (AVAudioFile → MLXArray)
+- ⬜ Full conditioning (tokenizer + ConditionEncoder full forward)
+- ⬜ Living Mode loop on-device (generate-ahead + AudioEngine.enqueue)
+- ⬜ Swap quant-dequant for MLX packed quantizedMatmul (memory win)
+- ⬜ Decide vocal-preservation on mobile (defer / server-side Demucs)
+- ⬜ On-device perf pass (VAE tiling; buffer-ahead)
 
 ## Server / distribution (alt path)
 - ⬜ RemoteGenerator backend (`REMIXFLOW_MODEL_URL`) — thin client → hosted model
