@@ -5,6 +5,7 @@ import MLX
 public struct Steering: Sendable {
     public var variationAmount: Float = 0.35
     public var prompt: String = "faithful cover, same style and mood"
+    public var lyrics: String = ""
     public init() {}
 }
 
@@ -47,8 +48,11 @@ public final class ACEStepPipeline: RemixGenerator {
     let dit: DiT
     let textEncoder: Qwen3TextEncoder
     let conditionEncoder: ConditionEncoder
+    let tokenizer: RFTokenizer?
 
-    public init(store: WeightStore) {
+    /// `tokenizer` enables the full text/lyric/timbre conditioning; pass nil to use
+    /// the neutral fallback.
+    public init(store: WeightStore, tokenizer: RFTokenizer? = nil) {
         func sub(_ p: String) -> [String: MLXArray] {
             Dictionary(uniqueKeysWithValues: store.weights
                 .filter { $0.key.hasPrefix("\(p)/") }
@@ -58,23 +62,41 @@ public final class ACEStepPipeline: RemixGenerator {
         dit = DiT(transformerWeights: sub("transformer"))
         textEncoder = Qwen3TextEncoder(weights: sub("text_encoder"))
         conditionEncoder = ConditionEncoder(weights: sub("condition_encoder"))
+        self.tokenizer = tokenizer
+    }
+
+    /// Cross-attention conditioning from prompt + lyrics + the source as timbre.
+    /// Prompt → Qwen3 last_hidden_state; lyrics → Qwen3 embedding only; timbre →
+    /// the source's VAE latents as one reference segment. (Server splits 3×10 s;
+    /// one segment is a reasonable on-device simplification.)
+    private func conditioning(prompt: String, lyrics: String, sourceMean: MLXArray) -> MLXArray {
+        guard let tokenizer else {
+            return conditionEncoder.neutral(seqLatent: sourceMean.dim(1), textEncoder: textEncoder).0
+        }
+        let textHidden = textEncoder(tokenizer.ids(prompt))                 // [1, Lt, 1024]
+        let textMask = MLX.ones([1, textHidden.dim(1)])
+        let lyricHidden = textEncoder.embed(tokenizer.ids(lyrics))          // [1, Ll, 1024] (embed only)
+        let lyricMask = MLX.ones([1, lyricHidden.dim(1)])
+        let (enc, _) = conditionEncoder(text: textHidden, textMask: textMask,
+                                        lyric: lyricHidden, lyricMask: lyricMask,
+                                        refer: sourceMean, order: [0])       // 1 timbre segment
+        return enc
     }
 
     public func generate(audio: MLXArray, steering: Steering, seed: UInt64) -> MLXArray {
-        // audio [2, N] → [1, N, 2]
-        let x = audio.transposed().reshaped([1, audio.dim(1), 2])
-        let params = vae.encode(x)                          // [1, T, 128]
-        let mean = params[0..., 0..., 0 ..< 64]             // latent mean = [1, T, 64]
+        let x = audio.transposed().reshaped([1, audio.dim(1), 2])           // [2,N] → [1,N,2]
+        let params = vae.encode(x)                                          // [1, T, 128]
+        let mean = params[0..., 0..., 0 ..< 64]                             // latent mean [1, T, 64]
 
-        // Conditioning. TODO: tokenize `steering.prompt`, run textEncoder + conditionEncoder.
-        // For the skeleton, pass empty/neutral conditioning (see ConditionEncoder).
-        let (enc, context) = conditionEncoder.neutral(seqLatent: mean.dim(1), textEncoder: textEncoder)
+        let enc = conditioning(prompt: steering.prompt, lyrics: steering.lyrics, sourceMean: mean)
+        // SDEdit context is neutral: the noised source enters via `latents`, not context.
+        let T = mean.dim(1)
+        let context = MLX.concatenated([MLX.zeros([1, T, 64]), MLX.ones([1, T, 64])], axis: -1)
 
         let out = SDEdit.run(srcLatents: mean, strength: steering.variationAmount, seed: seed) { xt, sigma in
             let t = MLXArray([sigma])
             return dit(hidden: xt, context: context, enc: enc, t: t, tR: t)
         }
-        let wave = vae.decode(out)                          // [1, L, 2]
-        return wave[0].transposed()                         // → [2, L]
+        return vae.decode(out)[0].transposed()                             // [1,L,2] → [2,L]
     }
 }

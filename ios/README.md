@@ -51,12 +51,12 @@ port each `*_mlx.py`'s `main()` parity check into a small Swift test that loads
 MLX-Swift API/layout differences from the Python MLX ports.
 
 ## What's wired vs TODO
-- ✅ UI (steering sliders, Living toggle), AVAudioEngine playback + gapless enqueue
+- ✅ UI (steering sliders, prompt/lyrics, Living toggle), AVAudioEngine playback + gapless enqueue
 - ✅ VAE encode/decode, DiT, Qwen3, **ConditionEncoder (full)**, SDEdit loop, 4-bit quantize
-- ✅ Pipeline orchestration (encode → SDEdit(DiT) → decode)
-- ⬜ Decode the imported audio file → `[2, N]` @ 48 kHz (AVAudioFile → MLXArray)
-- ⬜ **Tokenizer** (Qwen2Fast) → prompt/lyric ids + timbre latents, then swap
-  `conditionEncoder.neutral(…)` for the full `callAsFunction(text:…)`
+- ✅ **Audio decode** (`AudioIO.load`: AVAudioFile → 48 kHz stereo `[2,N]` MLXArray) + WAV write
+- ✅ **Tokenizer** (`RFTokenizer` via swift-transformers) → full text/lyric/timbre
+  conditioning wired in `ACEStepPipeline` (falls back to neutral if no tokenizer)
+- ✅ End-to-end `ACEStepPipeline.generate` (encode → condition → SDEdit(DiT) → decode)
 - ⬜ Living Mode loop (generate-ahead + `AudioEngine.enqueue`) on-device
 - ⬜ Swap quantize-dequantize for MLX packed `quantizedMatmul` (memory win)
-- ⬜ Compile + parity + perf pass on the M1
+- ⬜ Compile + per-component parity + perf pass on the M1

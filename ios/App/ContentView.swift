@@ -48,6 +48,8 @@ struct ContentView: View {
             }
             TextField("Style prompt", text: $model.steering.prompt)
                 .textFieldStyle(.roundedBorder)
+            TextField("Lyrics (optional)", text: $model.steering.lyrics, axis: .vertical)
+                .textFieldStyle(.roundedBorder).lineLimit(1...3)
         }
     }
 
@@ -86,12 +88,36 @@ final class AppModel: ObservableObject {
 
     private let audio = AudioEngine()
     private var source: MLXArray?          // [2, N] @ 48 kHz
-    private var generator: RemixGenerator? // set once weights are bundled/downloaded
+    private var generator: RemixGenerator? // set by setupModel(...)
+
+    /// Load the model once (weights + tokenizer) from a folder laid out like the
+    /// HF snapshot (transformer/ vae/ text_encoder/ condition_encoder/ tokenizer/).
+    func setupModel(modelDir: URL) {
+        status = "Loading model…"
+        Task.detached { [weak self] in
+            do {
+                let store = try WeightStore(directory: modelDir)
+                for c in ["transformer/", "text_encoder/", "condition_encoder/"] {
+                    store.quantizeLinears(prefix: c)   // 4-bit gs32; VAE stays fp16
+                }
+                let tok = try await RFTokenizer(folder: modelDir.appendingPathComponent("tokenizer"))
+                let pipe = ACEStepPipeline(store: store, tokenizer: tok)
+                await MainActor.run { self?.generator = pipe; self?.status = "Model ready." }
+            } catch {
+                await MainActor.run { self?.status = "Model load failed: \(error.localizedDescription)" }
+            }
+        }
+    }
 
     func load(url: URL) {
         songName = url.deletingPathExtension().lastPathComponent
-        // TODO: decode the file to [2, N] @ 48 kHz (AVAudioFile → MLXArray).
-        status = "Loaded. (Bundle the model to enable generation — see ios/README.md.)"
+        do {
+            let samples = try AudioIO.load(url: url)   // [2, N] @ 48 kHz
+            source = samples
+            status = "Loaded \(samples.dim(1)) samples."
+        } catch {
+            status = "Couldn't decode audio: \(error.localizedDescription)"
+        }
     }
 
     func generate() {

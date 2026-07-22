@@ -627,9 +627,25 @@ SDEdit generation, identity similarity, vocal preservation). Chosen build order:
 **Validated:** 75s stream, 8 windows, RTF 2.8× (pure gen ~7×), identity avg
 0.994, seams ≤0.054, tension breathing. Output `I_Will_Never_Fall__living.mp3`.
 
-**Resume here → next options (awaiting user's listen/decision):**
-1. Render >songlength (~4 min) to demonstrate non-repeating passes (wrap).
-2. Buffered streaming player + "Living Mode" UI with listening-mode presets.
-3. Tune feel (window length, tension range, per-feature morphing).
-4. Deeper DNA + real identity score (make the gate meaningful).
+Phase 2 (Living Songs) is complete and deployed (GitHub / PyPI / Docker / HF mirror).
+
+---
+
+# Phase 3 — On-device / iOS (in progress)
+
+Bring ACE-Step v1.5 to iPhone via **MLX**. See `mobile/mlx/` (Python ports, all
+parity-proven vs PyTorch) and `ios/` (MLX-Swift app skeleton). Full checklist in
+**`TODO.md`**.
+
+- ✅ **Whole model graph + loop ported & parity-proven**: VAE enc/dec, 4.17B DiT,
+  Qwen3 text encoder, condition encoder, SDEdit flow loop (errors 1e-7 – 9e-6).
+- ✅ **Quantization measured**: 4-bit (group 32) → **0.9936 audio mel-corr** vs
+  fp16; VAE kept fp16 → ~3 GB footprint (fits 8 GB iPhones). SDEdit re-anchoring
+  hides per-step quant error.
+- 🟡 **Swift app** (`ios/`): RemixFlowKit (all components in MLX-Swift), WeightStore
+  (load + 4-bit), AudioIO (decode→[2,N]@48k), tokenizer + full conditioning wired,
+  SwiftUI UI + AVAudioEngine. **Not compiled yet — needs the Mac.**
+- ⬜ Compile + per-component parity + perf on the M1; on-device Living loop; packed
+  quantized matmul; audio streaming. Alt path: RemoteGenerator (thin client → GPU
+  server) so a phone can drive generation before on-device is finished.
 

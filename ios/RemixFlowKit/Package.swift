@@ -10,6 +10,8 @@ let package = Package(
     dependencies: [
         // Apple's MLX for Swift (Metal-accelerated arrays + NN + quantization).
         .package(url: "https://github.com/ml-explore/mlx-swift.git", from: "0.18.0"),
+        // HF tokenizers for Swift (loads the Qwen2 tokenizer.json).
+        .package(url: "https://github.com/huggingface/swift-transformers.git", from: "0.1.12"),
     ],
     targets: [
         .target(
@@ -18,6 +20,7 @@ let package = Package(
                 .product(name: "MLX", package: "mlx-swift"),
                 .product(name: "MLXNN", package: "mlx-swift"),
                 .product(name: "MLXFast", package: "mlx-swift"),
+                .product(name: "Transformers", package: "swift-transformers"),
             ]
         ),
     ]

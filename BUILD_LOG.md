@@ -26,20 +26,21 @@ unchanged. Built locally; needs a re-release (0.1.x) to reach PyPI/Docker.
 **Tokens shared in chat — user should ROTATE**: GitHub PAT, PyPI token, HF token,
 Docker PAT. Not stored in any repo/file, but they're in the transcript.
 
-**iOS / on-device (MLX) — porting ACE-Step v1.5 to Apple Silicon** (`mobile/mlx/`).
-Full roadmap + checkboxes in **`TODO.md`**. User bought an **M1 Air 16 GB** (inbound)
-to run the MLX side; can't run MLX on this x86/CUDA box (no Metal). Recipe per
-component: reimplement framework-free → prove parity vs PyTorch here → MLX port →
-confirm on Mac. **Parity proven so far:**
-- ✅ VAE decoder (Oobleck) 0.17B — 6.1e-6
-- ✅ DiT (AceStepTransformer1DModel) 4.17B — 8.8e-6
-- ✅ Qwen3 text encoder 0.60B — 3.5e-6
-- 🟡 Condition encoder 0.61B — porting now (lyric+timbre encoders, pack/unpack)
+**iOS / on-device (MLX) — ACE-Step v1.5 fully ported** (`mobile/mlx/` Python +
+`ios/` Swift). Roadmap in **`TODO.md`**. User has an **M1 Air 16 GB** (inbound) to
+run/compile the Swift; can't run MLX/Swift on this x86/CUDA box.
 
-Model = 5.54B (11 GB bf16). Plan: 4-bit DiT+encoders, fp16 VAE ≈ 3 GB → 8 GB iPhone.
-Remaining after cond-enc: VAE **encoder** (SDEdit needs it), flow-matching loop,
-tokenizer, wire full MLX pipeline, 4-bit quantize + quality check, Swift app.
-Each `*_mlx.py` has a one-command parity test for the M1.
+**All components parity-proven vs PyTorch (Python, `mobile/mlx/`):**
+- ✅ VAE decoder 6.1e-6 · VAE encoder 3.9e-6 · DiT (4.17B) 8.8e-6
+- ✅ Qwen3 text enc 3.5e-6 · condition enc 3.4e-7 (mask exact) · flow loop 1e-7
+- ✅ **Quantization measured: 4-bit gs32 → 0.9936 audio mel-corr** (SDEdit re-anchoring
+  hides per-step quant error). Decision: 4-bit DiT+encoders, fp16 VAE ≈ 3 GB → 8 GB iPhone.
+
+**Swift app (`ios/`, NOT compiled — needs Mac):** RemixFlowKit package with full
+MLX-Swift translations (VAE/DiT/Qwen3/ConditionEncoder/SDEdit), WeightStore
+(load+4-bit), AudioIO (decode→[2,N]@48k), RFTokenizer (swift-transformers), full
+conditioning wired in ACEStepPipeline; SwiftUI app + AVAudioEngine. Remaining:
+compile+parity+perf on M1, Living-loop on device, packed quantized matmul.
 
 ---
 
