@@ -618,6 +618,8 @@ SDEdit generation, identity similarity, vocal preservation). Chosen build order:
 | Living Mode player + API | ✅ | `POST /api/living` (chained via `next_index`) + `LivingPlayer.tsx` (prefetch-ahead, **Living Repeat**, transport, controls). Verified end-to-end with ACE-Step. |
 | Buffered / streaming playback | ✅ (buffered) | Player generates the next segment ~15s before the current ends (gen ~4–7× realtime) → seamless endless play. True per-frame realtime still a stretch. |
 | Listening Modes | ✅ | 6 built-in presets (Studio/Live/Jazz/Orchestra/Ambient/Infinite Radio) + **user-saved presets** (persisted). `presets.py`, `GET/POST/DELETE /api/presets`, picker in `LivingControls.tsx`. |
+| Playlist (multiple songs) | ✅ | Living Mode weaves a set of songs into one endless set — evolve each ~`perSongSec`, crossfade the transition, loop. Checkbox playlist + "time per song" in `LivingControls`; player cycles songs (`LivingPlayer.tsx`). |
+| Gapless / seamless joins | ✅ | Web Audio scheduling + source-cursor continuity + time-aligned crossfade tail (no gap, no doubling, no beat skip). |
 | Deep analysis / richer DNA | 🟡 partial | Have tempo/key/embedding; sections, genre weights, emotional dims, per-instrument prominence not yet. |
 | Real-time generation (stretch) | ⬜ | Buffer-ahead approach viable given >realtime generation; not built. |
 | Controlled per-feature morphing | ⬜ | Tempo/melody/chords drifting independently — not yet (single strength per window today). |

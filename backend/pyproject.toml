@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "remixflow"
-version = "0.1.0"
+version = "0.1.1"
 description = "An AI-powered music evolution platform — generate endless familiar-but-fresh variations of a song."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -7,6 +7,28 @@ can resume without losing context. Newest entries at the bottom.
 
 ## ▶ RESUME HERE (current state — 2026-07-21)
 
+**DEPLOYED (public):**
+- GitHub: https://github.com/fbobe321/remixflow (main)
+- PyPI: https://pypi.org/project/remixflow/ (`pip install "remixflow[audio]"`, UI bundled)
+- Docker Hub: `fbobe3/remixflow:latest` (slim, 932 MB, DSP+UI) + `Dockerfile.gpu` (ACE-Step)
+- HF model mirror: https://huggingface.co/fbobe3/acestep-v15-xl-turbo-diffusers-mirror
+  (credits original; GPU image pulls from it via `ACESTEP_MODEL`)
+
+**HARD RULE (user): never publish music files.** Verified: no audio in git
+(any commit), wheel, or Docker image; `.gitignore` covers `*.mp3 *.wav samples/`.
+The earlier A/B artifact was republished with audio removed.
+
+**Playlist ✅**: Living Mode plays a set of songs (checkbox playlist in
+LivingControls), evolving each ~`perSongSec` then transitioning (crossfade),
+looping. Frontend-orchestrated (player calls `/api/living` per song) — backend
+unchanged. Built locally; needs a re-release (0.1.x) to reach PyPI/Docker.
+
+**Tokens shared in chat — user should ROTATE**: GitHub PAT, PyPI token, HF token,
+Docker PAT. Not stored in any repo/file, but they're in the transcript.
+
+---
+
+
 **Phase 1 (RemixFlow): complete & verified.** UI + FastAPI + two generation
 backends (DSP fallback, **ACE-Step v1.5 SDEdit** on GPU), async jobs, evolution
 tree, A/B, morph, preference learning, **vocal preservation** (Demucs, triggered

@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.title="RemixFlow" \
 
 # 'audio' extra adds librosa (tempo/key detection, time-stretch/pitch-shift).
 # soundfile bundles libsndfile, so MP3/WAV/FLAC/OGG work with no system packages.
-RUN pip install --no-cache-dir "remixflow[audio]==0.1.0"
+RUN pip install --no-cache-dir "remixflow[audio]==0.1.1"
 
 ENV REMIXFLOW_DATA_DIR=/data
 VOLUME ["/data"]

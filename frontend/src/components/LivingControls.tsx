@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
-import type { ControlsManifest, ControlValue, Preset, Steering } from "../types";
+import type { ControlsManifest, ControlValue, Preset, Song, Steering } from "../types";
 import { SteeringControl } from "./SteeringControls";
 
 interface Props {
@@ -8,9 +8,14 @@ interface Props {
   steering: Steering;
   improvisation: number;
   duration: number;
+  songs: Song[];
+  playlist: string[];
+  perSongSec: number;
   onSteering: (s: Steering) => void;
   onImprovisation: (v: number) => void;
   onDuration: (v: number) => void;
+  onPerSongSec: (v: number) => void;
+  onTogglePlaylist: (songId: string) => void;
 }
 
 // A focused subset of the steering catalog that shapes the Living "feel".
@@ -21,9 +26,14 @@ export function LivingControls({
   steering,
   improvisation,
   duration,
+  songs,
+  playlist,
+  perSongSec,
   onSteering,
   onImprovisation,
   onDuration,
+  onPerSongSec,
+  onTogglePlaylist,
 }: Props) {
   const styleControls = manifest.controls.filter((c) => STYLE_KEYS.includes(c.key));
   const setControl = (key: string, value: ControlValue) =>
@@ -116,6 +126,47 @@ export function LivingControls({
               ))}
             </div>
           </>
+        )}
+      </section>
+
+      <section className="control-group">
+        <h3>Playlist {playlist.length > 1 ? `· ${playlist.length} songs` : ""}</h3>
+        <p className="subtle" style={{ marginTop: 0 }}>
+          Pick songs to weave into one endless Living set (transitions between them).
+        </p>
+        <div className="playlist-rows">
+          {songs.map((s) => {
+            const on = playlist.includes(s.id);
+            const order = on ? playlist.indexOf(s.id) + 1 : null;
+            return (
+              <label key={s.id} className={`playlist-row ${on ? "on" : ""}`}>
+                <input type="checkbox" checked={on} onChange={() => onTogglePlaylist(s.id)} />
+                <span className="pl-order">{order ?? "·"}</span>
+                <span className="pl-title">{s.title}</span>
+              </label>
+            );
+          })}
+        </div>
+        {playlist.length > 1 && (
+          <div className="control slider" style={{ marginTop: 12 }}>
+            <div className="control-head">
+              <span className="control-label">Time per song</span>
+              <span className="control-readout">{Math.round(perSongSec)}s</span>
+            </div>
+            <input
+              type="range"
+              min={45}
+              max={240}
+              step={15}
+              value={perSongSec}
+              style={{ ["--fill" as string]: `${((perSongSec - 45) / 195) * 100}%` }}
+              onChange={(e) => onPerSongSec(Number(e.target.value))}
+            />
+            <div className="control-ends">
+              <span>Quick rotation</span>
+              <span>Linger longer</span>
+            </div>
+          </div>
         )}
       </section>
 

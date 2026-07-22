@@ -56,6 +56,8 @@ export function App() {
   const [improvisation, setImprovisation] = useState(0.35);
   const [livingDuration, setLivingDuration] = useState(40);
   const [livingSeed, setLivingSeed] = useState(7);
+  const [playlist, setPlaylist] = useState<string[]>([]); // song ids in Living playlist
+  const [perSongSec, setPerSongSec] = useState(90);
   // Latest living params, read fresh each segment so steering mid-performance works.
   const livingParamsRef = useRef({ improvisation, livingDuration, livingSeed, steering });
   livingParamsRef.current = { improvisation, livingDuration, livingSeed, steering: steering ?? { controls: {}, locks: [] } };
@@ -224,7 +226,10 @@ export function App() {
             <button
               className={mode === "living" ? "active" : ""}
               onClick={() => {
-                if (mode !== "living") setLivingSeed(Math.floor(Math.random() * 100000));
+                if (mode !== "living") {
+                  setLivingSeed(Math.floor(Math.random() * 100000));
+                  if (songId) setPlaylist((p) => (p.length ? p : [songId]));
+                }
                 setMode("living");
               }}
             >
@@ -264,8 +269,10 @@ export function App() {
             </div>
           ) : mode === "living" ? (
             <LivingPlayer
-              key={songId}
-              songId={songId}
+              key={(playlist.length ? playlist : [songId]).join(",")}
+              songIds={playlist.length ? playlist : [songId]}
+              songName={(id) => songs.find((s) => s.id === id)?.title ?? "…"}
+              perSongSec={perSongSec}
               backend={backend}
               getParams={() => {
                 const p = livingParamsRef.current;
@@ -358,9 +365,19 @@ export function App() {
               steering={steering}
               improvisation={improvisation}
               duration={livingDuration}
+              songs={songs}
+              playlist={playlist.length ? playlist : [songId]}
+              perSongSec={perSongSec}
               onSteering={setSteering}
               onImprovisation={setImprovisation}
               onDuration={setLivingDuration}
+              onPerSongSec={setPerSongSec}
+              onTogglePlaylist={(id) =>
+                setPlaylist((p) => {
+                  const base = p.length ? p : songId ? [songId] : [];
+                  return base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
+                })
+              }
             />
           ) : songId ? (
             <SteeringPanel

@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir \
-      "remixflow[audio]==0.1.0" \
+      "remixflow[audio]==0.1.1" \
       "diffusers>=0.39" transformers accelerate safetensors demucs
 
 # Pull the model from the self-hosted mirror by default (override with -e ACESTEP_MODEL=…).

@@ -214,6 +214,16 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius
 .chip.preset-user .preset-del { background: none; border: none; border-left: 1px solid var(--border); color: var(--muted); padding: 5px 9px; cursor: pointer; font-size: 11px; }
 .chip.preset-user .preset-del:hover { color: var(--danger); }
 
+/* --- Living playlist --- */
+.playlist-rows { display: flex; flex-direction: column; gap: 4px; }
+.playlist-row { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid transparent; cursor: pointer; font-size: 13px; }
+.playlist-row:hover { border-color: var(--border); }
+.playlist-row.on { border-color: var(--teal); background: rgba(45, 212, 191, 0.1); }
+.playlist-row input { accent-color: var(--teal); }
+.pl-order { width: 18px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+.playlist-row.on .pl-order { color: var(--teal); font-weight: 600; }
+.pl-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; }
   .steering-panel { position: static; max-height: none; }
