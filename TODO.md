@@ -27,12 +27,12 @@ translate to MLX → confirm on Mac (M1 Air, 16 GB, inbound).
 - ⬜ Wire the full pipeline in MLX (encode → condition → denoise → decode)
 - ⬜ Confirm every `*_mlx.py` parity test on the M1 Air
 
-## Quantization (de-risk accuracy)
-- ⬜ 4-bit quantize DiT + condition/text encoders (`mlx.nn.quantize`, keep VAE fp16)
-- ⬜ Measure quality hit (A/B quantized vs fp16 output) while the PyTorch reference
-  is still available here
-- ⬜ Mixed precision if needed (keep norms/scale_shift/timestep at fp16)
-- ⬜ Confirm ~3 GB footprint fits 8 GB iPhone budget
+## Quantization (de-risk accuracy) — ✅ MEASURED, 4-bit viable
+- ✅ Measured quality: **4-bit gs32 → decoded audio 0.9936 mel-corr vs fp16**
+  (8-bit 0.9998). SDEdit re-anchoring hides per-step quant error. `mobile/mlx/quantize/`.
+- ✅ Decision: uniform **4-bit group-32** for DiT + encoders, **VAE fp16** → ~3 GB.
+- ⬜ Apply real `mlx.nn.quantize` on the Mac + confirm on-device output matches.
+- ⬜ Re-test at high `variation_amount` before a "reimagine" mode ships.
 
 ## iOS app
 - ⬜ Swift + MLX app skeleton (load quantized weights, run pipeline)
