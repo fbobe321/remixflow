@@ -11,10 +11,13 @@ here**, then translate to MLX (a mechanical step) with a fixture the Mac verifie
 | **VAE decoder** (Oobleck) | 0.17 B | ✅ **6.1e-6, corr 1.0** | `vae/vae_decoder_mlx.py` |
 | **DiT** (AceStepTransformer1DModel) | **4.17 B** | ✅ **8.8e-6, corr 1.0** | `dit/dit_mlx.py` |
 | **Qwen3 text encoder** | 0.60 B | ✅ **3.5e-6, corr 1.0** | `textenc/qwen3_mlx.py` |
-| Condition encoder | 0.61 B | ⬜ | — |
-| Flow-matching SDEdit loop | — | ⬜ (trivial) | — |
+| **Condition encoder** | 0.61 B | ✅ **3.4e-7, corr 1.0** (mask exact) | `condenc/condenc_mlx.py` |
+| VAE **encoder** (for SDEdit) | (in VAE) | ⬜ | — |
+| Flow-matching SDEdit loop | — | ⬜ (trivial glue) | — |
 
-**3 of 4 weight components ported & parity-proven (4.94 B / 5.54 B params).**
+**✅ All 4 weight components ported & parity-proven (5.54 B / 5.54 B params).**
+Remaining is non-weight plumbing: the VAE encoder (waveform→latent for SDEdit),
+the flow-matching loop, tokenizer, and wiring the full MLX pipeline. See `TODO.md`.
 
 Both ported components' **MLX layout logic is also validated in NumPy** (VAE:
 `_validate_mlx_layout.py`; DiT: conv/deconv patchify unit test), so the only thing
@@ -39,6 +42,9 @@ activations, all weight-normed. Weight-norm is folded at export; snake is
 | `textenc/qwen3_numpy.py` | Qwen3 text encoder — framework-free spec (GQA+QK-norm+RoPE+SwiGLU, causal, final norm) |
 | `textenc/qwen3_mlx.py` | Qwen3 — **MLX port** + parity test |
 | `textenc/export_reference.py` | Capture a Qwen3 `last_hidden_state` reference |
+| `condenc/condenc_numpy.py` | Condition encoder spec (text proj + lyric/timbre encoders + pack/unpack) |
+| `condenc/condenc_mlx.py` | Condition encoder — **MLX port** + parity test |
+| `condenc/export_reference.py` | Capture a condition-encoder reference (synthetic inputs) |
 | `fixtures/` | parity fixtures (git-ignored; regenerate via the export scripts) |
 
 DiT weights are loaded straight from the HF snapshot's `transformer/*.safetensors`
