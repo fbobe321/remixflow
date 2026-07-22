@@ -21,10 +21,10 @@ translate to MLX → confirm on Mac (M1 Air, 16 GB, inbound).
 - ✅ Qwen3 text encoder (0.60B) — parity 3.5e-6
 - ✅ Condition encoder (0.61B) — parity 3.4e-7 (mask exact). **All 4 weight
   components done — 5.54B/5.54B.**
-- ⬜ VAE **encoder** (needed for SDEdit: waveform → latent)
-- ⬜ Flow-matching SDEdit loop (pure array math; noise → 8 Euler steps → decode)
+- ✅ VAE **encoder** (SDEdit waveform → latent) — parity 3.9e-6
+- ✅ Flow-matching SDEdit loop — 1e-7 vs diffusers scheduler
 - ⬜ Tokenizer (Qwen2TokenizerFast) — bundle or swift-transformers
-- ⬜ Wire the full pipeline in MLX (encode → condition → denoise → decode)
+- ⬜ Wire the full pipeline in MLX (encode → condition → denoise → decode) end-to-end
 - ⬜ Confirm every `*_mlx.py` parity test on the M1 Air
 
 ## Quantization (de-risk accuracy) — ✅ MEASURED, 4-bit viable

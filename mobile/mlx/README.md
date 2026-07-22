@@ -12,12 +12,13 @@ here**, then translate to MLX (a mechanical step) with a fixture the Mac verifie
 | **DiT** (AceStepTransformer1DModel) | **4.17 B** | ✅ **8.8e-6, corr 1.0** | `dit/dit_mlx.py` |
 | **Qwen3 text encoder** | 0.60 B | ✅ **3.5e-6, corr 1.0** | `textenc/qwen3_mlx.py` |
 | **Condition encoder** | 0.61 B | ✅ **3.4e-7, corr 1.0** (mask exact) | `condenc/condenc_mlx.py` |
-| VAE **encoder** (for SDEdit) | (in VAE) | ⬜ | — |
-| Flow-matching SDEdit loop | — | ⬜ (trivial glue) | — |
+| **VAE encoder** (for SDEdit) | (in VAE) | ✅ **3.9e-6, corr 1.0** | `vae/encoder_mlx.py` |
+| **Flow-matching SDEdit loop** | — | ✅ **1e-7 vs diffusers scheduler** | `flow/sdedit.py` |
 
-**✅ All 4 weight components ported & parity-proven (5.54 B / 5.54 B params).**
-Remaining is non-weight plumbing: the VAE encoder (waveform→latent for SDEdit),
-the flow-matching loop, tokenizer, and wiring the full MLX pipeline. See `TODO.md`.
+**✅ Entire model graph + generation loop ported & parity-proven.** Quantization
+measured: **4-bit gs32 → 0.9936 audio mel-corr** (`quantize/`). Remaining:
+tokenizer, wire the full MLX pipeline, apply real `mlx.nn.quantize` on the Mac,
+Swift app. See `TODO.md`.
 
 Both ported components' **MLX layout logic is also validated in NumPy** (VAE:
 `_validate_mlx_layout.py`; DiT: conv/deconv patchify unit test), so the only thing
