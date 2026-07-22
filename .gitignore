@@ -33,3 +33,6 @@ samples/
 
 # TS build info
 frontend/tsconfig.tsbuildinfo
+
+# MLX port fixtures (regenerate with export_reference.py)
+mobile/mlx/fixtures/
