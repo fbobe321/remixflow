@@ -1,16 +1,22 @@
-# RemixFlow on-device (MLX) — Phase 0 spike: VAE decoder
+# RemixFlow on-device (MLX) — running ACE-Step v1.5 on iPhone
 
-Goal: run ACE-Step v1.5 on an iPhone via **MLX** (Apple Silicon). This is the
-first, highest-signal step — porting the **Oobleck VAE decoder** (latent → 48 kHz
-stereo waveform) and proving numerical parity, before tackling the 4 B DiT.
+Goal: run ACE-Step v1.5 on Apple Silicon via **MLX**. Approach: reimplement each
+component framework-free, **prove numerical parity against the real PyTorch model
+here**, then translate to MLX (a mechanical step) with a fixture the Mac verifies.
 
-## Status — ✅ VAE decoder ported & parity-proven
+## Status
 
-| Check | Result |
-|-------|--------|
-| NumPy reimplementation vs PyTorch | **rel err 6.1e-6, corr 1.0000000000** |
-| MLX-layout emulation (channels-last + transposed weights) vs PyTorch | **rel err 6.1e-6, corr 1.0000000000** |
-| MLX run on Apple Silicon | ⏳ run `vae_decoder_mlx.py` on a Mac |
+| Component | Params | NumPy vs PyTorch | MLX (run on Mac) |
+|-----------|-------:|------------------|------------------|
+| **VAE decoder** (Oobleck) | 0.17 B | ✅ **6.1e-6, corr 1.0** | `vae/vae_decoder_mlx.py` |
+| **DiT** (AceStepTransformer1DModel) | **4.17 B** | ✅ **8.8e-6, corr 1.0** | `dit/dit_mlx.py` |
+| Qwen3 text encoder | 0.60 B | ⬜ (turnkey via `mlx_lm.convert`) | — |
+| Condition encoder | 0.61 B | ⬜ | — |
+| Flow-matching SDEdit loop | — | ⬜ (trivial) | — |
+
+Both ported components' **MLX layout logic is also validated in NumPy** (VAE:
+`_validate_mlx_layout.py`; DiT: conv/deconv patchify unit test), so the only thing
+left for these two is confirming MLX's own ops on a Mac.
 
 The decoder is a stack of transposed-conv upsamplers (strides **[10, 6, 4, 4, 2]**,
 1920× total → 25 fps latent to 48 kHz), dilated residual units, and **snake**
@@ -19,21 +25,30 @@ activations, all weight-normed. Weight-norm is folded at export; snake is
 
 ## Files
 
-| File | Role | Runs on |
-|------|------|---------|
-| `vae/export_reference.py` | Load the real VAE, fold weight-norm, dump weights + a parity fixture (input latent + PyTorch output) | Linux/CUDA (done) |
-| `vae/oobleck_numpy.py` | Framework-free NumPy spec (the source of truth) | anywhere |
-| `vae/_validate_mlx_layout.py` | NumPy emulation of MLX's layout — de-risks the port without a Mac | anywhere |
-| `vae/vae_decoder_mlx.py` | **The MLX port** + parity test | **Apple Silicon** |
-| `fixtures/` | `vae_decoder.safetensors`, config, `parity_input.npy`, `parity_output.npy` | — |
+| File | Role |
+|------|------|
+| `vae/oobleck_numpy.py` | VAE decoder — framework-free spec (source of truth) |
+| `vae/vae_decoder_mlx.py` | VAE decoder — **MLX port** + parity test |
+| `vae/export_reference.py` | Fold weight-norm, dump VAE parity fixture |
+| `vae/_validate_mlx_layout.py` | NumPy emulation of MLX conv layout (de-risk without a Mac) |
+| `dit/dit_numpy.py` | DiT — framework-free spec (dual timestep, GQA+QK-norm+RoPE, sliding/full attn, AdaLN, SwiGLU, patchify) |
+| `dit/dit_mlx.py` | DiT — **MLX port** + parity test |
+| `dit/export_reference.py` | Capture a DiT reference forward (seeded synthetic inputs) |
+| `fixtures/` | parity fixtures (git-ignored; regenerate via the export scripts) |
 
-## Run the MLX parity test (on a Mac / cloud Mac)
+DiT weights are loaded straight from the HF snapshot's `transformer/*.safetensors`
+(bf16 → fp32 via torch), so nothing large is re-exported.
+
+## Run the MLX parity tests (on a Mac / cloud Mac)
 
 ```bash
-pip install mlx numpy safetensors
-cd mobile/mlx/vae
-python vae_decoder_mlx.py
-# expect: PARITY_PASS  (rel err < 1e-3 vs the PyTorch fixture)
+pip install mlx numpy safetensors torch
+# 1. regenerate fixtures once (needs the model; run on any machine with it):
+python vae/export_reference.py
+python dit/export_reference.py
+# 2. parity on Apple Silicon:
+python vae/vae_decoder_mlx.py                    # -> PARITY_PASS
+python dit/dit_mlx.py /path/to/hf/snapshot       # -> DIT_MLX_PARITY_PASS
 ```
 
 No Apple Silicon handy? MLX can't be virtualized on x86 (needs Metal). Options:
