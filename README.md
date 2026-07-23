@@ -162,6 +162,28 @@ The generation seam is one abstract method — implement `Generator.generate` an
 call `register_generator(...)` (see `generation/registry.py`). It then appears in
 `/api/backends`, selectable via `POST /api/generate?backend=<name>`.
 
+## Remote model server (thin client)
+
+Run the heavy model on one machine (a GPU box, or the `fbobe3/remixflow:gpu`
+container) and point lightweight clients at it — no torch/GPU needed on the
+client. This is also how a phone app can drive generation before the on-device
+build is ready.
+
+```bash
+# On the GPU box: a normal server with a real backend (the "model server").
+remixflow serve --host 0.0.0.0 --port 8770
+
+# On the client (plain `pip install remixflow`, no torch): point at it.
+REMIXFLOW_MODEL_URL=http://gpu-box:8770 remixflow serve
+```
+
+The client's `remote` backend forwards generation to the server's stateless
+`POST /api/infer` (raw audio in, generated audio out) and appears in
+`/api/backends`. Env: `REMIXFLOW_MODEL_URL`, `REMIXFLOW_REMOTE_BACKEND`
+(default `ace-step`), `REMIXFLOW_REMOTE_TOKEN` (optional bearer auth). Default
+backend order is `ace-step → remote → dsp`, so a client auto-uses the remote when
+the URL is set and falls back to DSP otherwise.
+
 ## Tests
 
 ```bash

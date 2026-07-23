@@ -197,6 +197,30 @@ class RemixService:
             "note": result.note,
         }
 
+    # --- stateless inference (for RemoteGenerator / thin clients) ---------
+
+    def infer(self, clip: Clip, steering: "Steering", *, backend: str | None = None,
+              seed: int | None = None, instrumental: bool = False) -> dict:
+        """Vary an uploaded clip with the given steering and return audio. Powers
+        the `/api/infer` endpoint that RemoteGenerator (and phone clients) call."""
+        gen = get_generator(backend)
+        if gen.name == "remote":
+            raise ServiceError("Server has no local model backend (would loop to remote).")
+        try:
+            result = gen.generate(clip, steering.normalized(), seed=seed, instrumental=instrumental)
+        except Exception as exc:
+            raise ServiceError(f"Inference failed ({gen.name}): {exc}") from exc
+        seg_id = f"infer_{uuid.uuid4().hex[:12]}"
+        out_path = self.store.audio_dir / f"{seg_id}.wav"
+        save(result.clip, str(out_path))
+        return {
+            "id": seg_id,
+            "audio_url": f"/api/infer/audio/{seg_id}",
+            "duration": round(result.clip.duration, 2),
+            "backend": gen.name,
+            "note": f"{result.generator}: {result.note}",
+        }
+
     # --- preference learning (PRD §8) -------------------------------------
 
     def rate(self, variant_id: str, rating: int) -> Variant:

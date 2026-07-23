@@ -47,8 +47,11 @@ translate to MLX → confirm on Mac (M1 Air, 16 GB, inbound).
 - ⬜ On-device perf pass (VAE tiling; buffer-ahead)
 
 ## Server / distribution (alt path)
-- ⬜ RemoteGenerator backend (`REMIXFLOW_MODEL_URL`) — thin client → hosted model
-  (enables a lightweight phone app talking to a GPU server)
+- ✅ RemoteGenerator backend (`REMIXFLOW_MODEL_URL`) — thin client → hosted model.
+  Stateless `POST /api/infer` on the server; `generation/remote.py` forwards.
+  Validated: no-torch client generated ACE-Step audio via the GPU server (8.4s).
+- ⬜ Point the iOS app at a RemixFlow server (URLSession → /api/infer) as the
+  pre-on-device path
 
 ## Housekeeping
 - ⬜ **Rotate the 4 tokens** pasted in chat (GitHub, PyPI, HF, Docker)

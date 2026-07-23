@@ -11,6 +11,7 @@ from __future__ import annotations
 from .acestep import AceStepGenerator
 from .base import Generator
 from .dsp import DSPGenerator
+from .remote import RemoteGenerator
 
 _REGISTRY: dict[str, Generator] = {}
 
@@ -19,8 +20,9 @@ def register_generator(gen: Generator) -> None:
     _REGISTRY[gen.name] = gen
 
 
-#: Preference order for the default backend — real model first, DSP fallback.
-_DEFAULT_ORDER = ("ace-step", "dsp")
+#: Preference order for the default backend — local model, then a remote model
+#: server (thin client), then the always-on DSP fallback.
+_DEFAULT_ORDER = ("ace-step", "remote", "dsp")
 
 
 def get_generator(name: str | None = None) -> Generator:
@@ -45,7 +47,8 @@ def list_generators() -> list[dict[str, object]]:
     ]
 
 
-# Register backends on import. ACE-Step self-probes availability (torch +
-# weights); the DSP reference backend is always available as a fallback.
+# Register backends on import. ACE-Step self-probes (torch + weights); Remote is
+# available when REMIXFLOW_MODEL_URL is set; DSP is always available (fallback).
 register_generator(AceStepGenerator())
+register_generator(RemoteGenerator())
 register_generator(DSPGenerator())

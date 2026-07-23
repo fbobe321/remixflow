@@ -7,7 +7,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
+import json
+
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -17,7 +19,9 @@ from .audio.io import available as audio_available
 from .config import STATIC_DIR, Settings
 from .generation import list_generators
 from .jobs import JobManager
-from .models import GenerateRequest, LivingRequest, MorphRequest, PresetCreate, RateRequest
+from .models import (
+    GenerateRequest, LivingRequest, MorphRequest, PresetCreate, RateRequest, Steering,
+)
 from .params import controls_manifest
 from .presets import PresetStore
 from .service import RemixService, ServiceError
@@ -242,6 +246,53 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         path = store.audio_dir / f"{seg_id}.wav"
         if not path.exists():
             raise HTTPException(404, "Segment not found")
+        return FileResponse(str(path), media_type="audio/wav")
+
+    # --- stateless inference (RemoteGenerator / thin clients) ------------
+
+    @app.post("/api/infer", status_code=202)
+    async def infer(
+        request: Request,
+        steering: str = Query(default="{}"),
+        backend: str | None = Query(default=None),
+        seed: int | None = Query(default=None),
+        instrumental: int = Query(default=0),
+        svc: RemixService = Depends(get_service),
+    ) -> dict:
+        """Vary an uploaded clip (raw WAV/FLAC/OGG/MP3 in the request body) with the
+        given steering (JSON in the `steering` query param). Returns a job whose
+        result has an `audio_url`. Runs the server's local model backend."""
+        body = await request.body()
+        if not body:
+            raise HTTPException(400, "Empty body — send raw audio bytes.")
+        try:
+            steer = Steering(**json.loads(steering))
+        except Exception:
+            raise HTTPException(400, "Invalid `steering` JSON.")
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp.write(body)
+            tmp_path = tmp.name
+
+        def work(report) -> dict:
+            report(0.1, f"Generating with {backend or 'default'} backend…")
+            try:
+                from .audio.io import load
+                clip = load(tmp_path)
+                return svc.infer(clip, steer, backend=backend, seed=seed,
+                                 instrumental=bool(instrumental))
+            finally:
+                os.unlink(tmp_path)
+
+        return jobs.submit("infer", work).to_dict()
+
+    @app.get("/api/infer/audio/{seg_id}")
+    def infer_audio(seg_id: str) -> FileResponse:
+        if not seg_id.startswith("infer_") or "/" in seg_id or ".." in seg_id:
+            raise HTTPException(400, "Bad segment id")
+        path = store.audio_dir / f"{seg_id}.wav"
+        if not path.exists():
+            raise HTTPException(404, "Not found")
         return FileResponse(str(path), media_type="audio/wav")
 
     @app.get("/api/audio/{variant_id}")
