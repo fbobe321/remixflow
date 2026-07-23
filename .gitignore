@@ -36,3 +36,6 @@ frontend/tsconfig.tsbuildinfo
 
 # MLX port fixtures (regenerate with export_reference.py)
 mobile/mlx/fixtures/
+
+# live test server data
+_livedata/
